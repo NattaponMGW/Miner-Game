@@ -84,6 +84,10 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
     function useLifeTime(uint256 caverId, uint256 value) public onlyOwner{
         nftLifeTime[caverId] -= value;
     }
+
+    function PickaxeEquippedAmount(uint256 caverId) public view returns(uint256) {
+        return equippedPickaxe[caverId].length;
+    }
     // ------------------------------------------------------------------------------
     function mintCaver(address receiver) public onlyOwner {
         require(msg.sender != address(0));
