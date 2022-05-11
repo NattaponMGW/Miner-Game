@@ -9,18 +9,23 @@ import "./GetRandom.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Gameplay is Ownable, GetRandom{
-    Caver public caver = Caver(0x09943Fa8DD32C76f7b880627a0F6af73e8f5A595);
-    Backpack public backpack = Backpack(0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8);
-    Pickaxe public pickaxe = Pickaxe(0x5A86858aA3b595FD6663c2296741eF4cd8BC4d01);
+
+    event mined(address player, uint256 caverId, uint256 reward);
+
+    Caver public caver; // = Caver(0x09943Fa8DD32C76f7b880627a0F6af73e8f5A595);
+    Backpack public backpack;   // = Backpack(0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8);
+    Pickaxe public pickaxe; // = Pickaxe(0x5A86858aA3b595FD6663c2296741eF4cd8BC4d01);
     Token public token;
 
-    address public gamePool = 0xb8DE0C06A0d55584e7DA4148F352Ed9fF4595367;
+    address public gamePool;
 
-    // constructor(Caver caverAddress, Backpack backpackAddress, Pickaxe pickaxeAddress){
-    //     caver = Caver(caverAddress);
-    //     backpack = Backpack(backpackAddress);
-    //     pickaxe = Pickaxe(pickaxeAddress);
-    // }
+    constructor(Caver caverAddress, Backpack backpackAddress, Pickaxe pickaxeAddress, Token tokenAddress, address pool){
+        caver = Caver(caverAddress);
+        backpack = Backpack(backpackAddress);
+        pickaxe = Pickaxe(pickaxeAddress);
+        token = Token(tokenAddress);
+        gamePool = pool;
+    }
 
     // player => all Reward
     mapping(address => uint256) public myReward;
@@ -33,7 +38,14 @@ contract Gameplay is Ownable, GetRandom{
     uint256 public waitClaimRewardPeriod = 60 minutes; //   10 days
     uint256 public claimRewardFee = 30; // 30% of total reward
 
-    uint256 public rewardPerLevel = 359; //Must devide by 100
+    uint256 public rewardPerLevel = 359; // token = ( rewardPerLevel * 10 ** 18) / 100
+
+    uint256 public caverPrice = 19;     // token = (price * 10 ** 18)
+    uint256 public backpackPrice = 19;  // token = (price * 10 ** 18)
+    uint256 public pickaxePrice = 19;   // token = (price * 10 ** 18)
+
+    uint256 public sharpenPrice = 1;
+    uint256 public foodPrice = 1; // divide by 1000
 
     // --------------------------------------------------------------------------------
     function ClaimReward() public {
@@ -70,11 +82,47 @@ contract Gameplay is Ownable, GetRandom{
        return (reward);
     }
     
+    // --------------------------------------------------------------------------------
+    function ReceiveToken(uint amount) public {
+        // player must give allowance to Gameplay contract first;
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Player : Insufficient allowance");
+        require(token.balanceOf(msg.sender) >= amount, "Player : Insufficient balance");
+
+        token.transferFrom(msg.sender, gamePool, amount);
+    }
+    
     function TransferReward(uint256 amount, address receiver) internal {
+        uint256 allowance = token.allowance(gamePool, address(this));
+        require(allowance >= amount, "Game's Pool : Insufficient allowance");
+        require(token.balanceOf(gamePool) >= amount, "Game's Pool : Insufficient balance");
+
         token.transferFrom(gamePool, receiver, amount);
     } 
 
     // --------------------------------------------------------------------------------
+
+    function TestMine(uint256 caverId, uint256 level, bool emitEvent)public onlyOwner{
+        uint256 reward;
+        reward = toToken( rewardPerLevel * level ) / 100;
+        uint256 result;
+        uint256 successNumber = random(caverId);
+        if (successNumber >= 300) { // 70% Seccess Rate
+            result = reward;
+        }else {
+            result = 0;
+        }
+
+        if (result > 0 ){
+            // Give Reward
+
+            myReward[msg.sender] += result;
+        }
+
+        if (emitEvent){
+            emit mined(msg.sender, caverId, result);
+        }
+    }
 
     function Mine(uint256 caverId, uint256 level) public{
         require (msg.sender != address(0));
@@ -104,7 +152,7 @@ contract Gameplay is Ownable, GetRandom{
 
         // Calculate Reward
         uint256 reward;
-        reward = TokenReward( reward * level );
+        reward = toToken( rewardPerLevel * level ) / 100;
         uint256 result;
         uint256 successNumber = random(caverId);
         if (successNumber >= 300) { // 70% Seccess Rate
@@ -123,10 +171,12 @@ contract Gameplay is Ownable, GetRandom{
         caver.useFoods(caverId, foodsNeed);
 
         lastMined[caverId] = block.timestamp;
+        
+        emit mined(msg.sender, caverId, result);
     }
 
     function claimRewardFirst(address player) public view returns(bool){
-        if(CalculateReward(player) >= myReward[player])
+        if(CalculateReward(player) >= myReward[player] && myReward[player] != 0)
             return (true);
         else    
             return (false);
@@ -144,6 +194,7 @@ contract Gameplay is Ownable, GetRandom{
         require(foodAmount >= 0, "Food amount less than zero");
 
         // Pay token for consumable
+        ReceiveToken(toToken(sharpenAmount * sharpenPrice) + ( toToken(foodAmount * foodPrice) / 1000) );
 
         if (sharpenAmount > 0){
             caver.addSharpens(caverId, sharpenAmount);
@@ -154,24 +205,26 @@ contract Gameplay is Ownable, GetRandom{
     }
 
     function MintItem(uint256 choose, uint256 amount) public {
-        // 1 = Pickaxe
+        // 1 = Caver
         // 2 = Backpack
-        // 3 = Caver
-
+        // 3 = Pickaxe
+        
         if (choose == 1){
             //Pay Token for item
-
-            pickaxe.mintPickaxe(msg.sender, amount);
-        }else if (choose == 2){
-            //Pay Token for item
-
-            backpack.mintBackpack(msg.sender, amount);
-
-        }else if (choose == 3){
-            //Pay Token for item
+            ReceiveToken(toToken(caverPrice));
 
             amount = 1;
             caver.mintCaver(msg.sender);
+        }else if (choose == 2){
+            //Pay Token for item
+            ReceiveToken(toToken(backpackPrice));
+
+            backpack.mintBackpack(msg.sender, amount);
+
+        }else if(choose == 3){
+            ReceiveToken(toToken(pickaxePrice));
+
+            pickaxe.mintPickaxe(msg.sender, amount);
         }
     }
 
@@ -205,11 +258,55 @@ contract Gameplay is Ownable, GetRandom{
         }
     }
 
-    function TokenReward(uint256 reward) public pure returns(uint256){
-        reward = (reward * 10 ** 18) / 100;
+    function toToken(uint256 reward) public pure returns(uint256){
+        reward = (reward * 10 ** 18) ;
         return (reward);
     }
 
+    // ---------------------------------------------------------------------------
+    function setWaitMinePeriod (uint256 waitingPeriod) public onlyOwner{
+        waitMinePeriod = waitingPeriod;
+    }
+    function setWaitClaimRewardPeriod (uint256 waitingPeriod) public onlyOwner{
+        waitClaimRewardPeriod = waitingPeriod;
+    }
+    function setClaimRewardFee (uint256 newFeeRate) public onlyOwner{
+        require(newFeeRate >= 0 && newFeeRate <=100, "Fee rate must be bvetween 0 - 100");
+        claimRewardFee = newFeeRate;
+    }
+    function setRewardPerLevel (uint256 newReward) public onlyOwner{
+        rewardPerLevel = newReward;
+    }
+
+    function setCaverContract(address newContract) public onlyOwner{
+        caver = Caver(newContract);
+    }
+    function setPickaxeContract(address newContract) public onlyOwner{
+        pickaxe = Pickaxe(newContract);
+    }
+    function setBackpackContract(address newContract) public onlyOwner{
+        backpack = Backpack(newContract);
+    }
+    function setTokenContract(address newContract) public onlyOwner{
+        token = Token(newContract);
+    }
+    function setGamePoolContract(address newContract) public onlyOwner{
+        gamePool = newContract;
+    }
+
+    function setPrice(uint choose, uint256 newPrice) public onlyOwner{
+        if(choose == 1){ // Caver
+            caverPrice = newPrice;
+        }if(choose == 2){ // Backpack
+            backpackPrice = newPrice;
+        }if(choose == 3){ // Pickaxe
+            pickaxePrice = newPrice;
+        }if(choose == 4){ // Sharpen
+            sharpenPrice = newPrice;
+        }if(choose == 5){ // Food (divide by 1000)
+            foodPrice = newPrice;
+        }
+    }
 
     // function _mintPickaxe(uint256 amount) public onlyOwner {
     //     pickaxe.mintPickaxe(msg.sender, amount);

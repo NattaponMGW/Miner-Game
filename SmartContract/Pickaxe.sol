@@ -2,11 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "GetRandom.sol";
 
-contract Pickaxe is ERC721Enumerable, Ownable, GetRandom {
-    constructor() ERC721("Pickaxe", "PX") {}
+contract Pickaxe is ERC721Enumerable, GetRandom {
+    address private _owner;
+
+    constructor() ERC721("Pickaxe", "PX") {
+        _owner = msg.sender;
+    }
 
     using Strings for uint256;
 
@@ -39,7 +42,7 @@ contract Pickaxe is ERC721Enumerable, Ownable, GetRandom {
     }
 
 
-    function mintPickaxe(address receiver, uint256 amount) public onlyOwner {
+    function mintPickaxe(address receiver, uint256 amount) public onlyWhitelist {
         require(amount > 0, "Amount to mint is zero.");
         require(msg.sender != address(0));
 
@@ -60,20 +63,20 @@ contract Pickaxe is ERC721Enumerable, Ownable, GetRandom {
 
     }
 
-    function equippedItem(uint256 itemId, bool equipped) public onlyOwner{
+    function equippedItem(uint256 itemId, bool equipped) public onlyWhitelist{
         nftEquipped[itemId] = equipped;
     }
 
-    function setItemStr(uint256 itemId, uint256 str) public onlyOwner{
+    function setItemStr(uint256 itemId, uint256 str) public onlyWhitelist{
         require (str >= 15 && str <= 250, "Strengh exceed requirement");
         nftStr[itemId] = str;
     }
 
-    function setbaseURI(string memory input) public onlyOwner{
+    function setbaseURI(string memory input) public onlyWhitelist{
         baseURI = input;
     }
 
-    function setBaseExtension(string memory input) public onlyOwner{
+    function setBaseExtension(string memory input) public onlyWhitelist{
         baseExtension = input;
     }
 
@@ -107,12 +110,13 @@ contract Pickaxe is ERC721Enumerable, Ownable, GetRandom {
 
     }
 
-     modifier onlyOwner() override {
-        require(owner() == _msgSender() || whiteLists[msg.sender], "Ownable: caller is not the owner or whitelisted"); // Or
+     modifier onlyWhitelist() {
+        require(msg.sender == _owner || whiteLists[msg.sender], "Ownable: caller is not the owner or whitelisted"); // Or
         _;
     }
 
-    function setWhitelists (address add, bool isWhitelist) public onlyOwner {
+
+    function setWhitelists (address add, bool isWhitelist) public onlyWhitelist {
         whiteLists[add] = isWhitelist;
     }
 
@@ -120,7 +124,7 @@ contract Pickaxe is ERC721Enumerable, Ownable, GetRandom {
         address from,
         address to,
         uint256 tokenId
-    ) public override(ERC721, IERC721) {
+    ) public override(ERC721) { //, IERC721
         //solhint-disable-next-line max-line-length
         require(_isApprovedOrOwner(_msgSender(), tokenId) || whiteLists[msg.sender], "ERC721: transfer caller is not owner nor approved");
 

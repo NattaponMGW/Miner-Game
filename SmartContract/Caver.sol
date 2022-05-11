@@ -2,11 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "GetRandom.sol";
 
-contract Caver is ERC721Enumerable, Ownable, GetRandom {
-    constructor() ERC721("Caver", "CAVER") {}
+contract Caver is ERC721Enumerable, GetRandom {
+    
+    address private _owner;
+
+    constructor() ERC721("Caver", "CAVER") {
+        _owner = msg.sender;
+    }
 
     using Strings for uint256;
 
@@ -36,7 +40,7 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
 
     // ------------------------------------------------------------------------------
 
-    function addPickaxe(uint256 caverId, uint256 pickaxeId, uint256 str) public onlyOwner{
+    function addPickaxe(uint256 caverId, uint256 pickaxeId, uint256 str) public onlyWhitelist{
         require(nftSpace[caverId] > 0, "Available space is zero.");
         nftSpace[caverId]--;
         
@@ -44,44 +48,44 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
         equippedPickaxe[caverId].push(pickaxeId);
     }
 
-    function addBackpack(uint256 caverId, uint256 backpackId, uint256 space) public onlyOwner{
+    function addBackpack(uint256 caverId, uint256 backpackId, uint256 space) public onlyWhitelist{
         nftSpace[caverId] += space;
         equippedBackpack[caverId].push(backpackId);
     }
     
-    function addSharpens(uint256 caverId, uint256 value) public onlyOwner{
+    function addSharpens(uint256 caverId, uint256 value) public onlyWhitelist{
         nftSharpens[caverId] += value;
     }
     
-    function addFoods(uint256 caverId, uint256 value) public onlyOwner{
+    function addFoods(uint256 caverId, uint256 value) public onlyWhitelist{
         nftFoods[caverId] += value;
     }
     
-    function useSharpens(uint256 caverId, uint256 value) public onlyOwner{
+    function useSharpens(uint256 caverId, uint256 value) public onlyWhitelist{
         nftSharpens[caverId] -= value;
     }
     
-    function useFoods(uint256 caverId, uint256 value) public onlyOwner{
+    function useFoods(uint256 caverId, uint256 value) public onlyWhitelist{
         nftFoods[caverId] -= value;
     }
 
-    function setRank(uint256 caverId, uint256 value) public onlyOwner{
+    function setRank(uint256 caverId, uint256 value) public onlyWhitelist{
         nftRank[caverId] = value;
     }
     
-    function setLevel(uint256 caverId, uint256 value) public onlyOwner{
+    function setLevel(uint256 caverId, uint256 value) public onlyWhitelist{
         nftLevel[caverId] = value;
     }
     
-    function addExp(uint256 caverId, uint256 value) public onlyOwner{
+    function addExp(uint256 caverId, uint256 value) public onlyWhitelist{
         nftExp[caverId] += value;
     }
     
-    function setLifeTime(uint256 caverId, uint256 value) public onlyOwner{
+    function setLifeTime(uint256 caverId, uint256 value) public onlyWhitelist{
         nftLifeTime[caverId] = value;
     }
 
-    function useLifeTime(uint256 caverId, uint256 value) public onlyOwner{
+    function useLifeTime(uint256 caverId, uint256 value) public onlyWhitelist{
         nftLifeTime[caverId] -= value;
     }
 
@@ -89,7 +93,7 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
         return equippedPickaxe[caverId].length;
     }
     // ------------------------------------------------------------------------------
-    function mintCaver(address receiver) public onlyOwner {
+    function mintCaver(address receiver) public onlyWhitelist {
         require(msg.sender != address(0));
 
         nftId++; // start from no. 1
@@ -103,11 +107,11 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
     }
 
     // -------------------------------------------------------------------------------------------
-    function setbaseURI(string memory input) public onlyOwner{
+    function setbaseURI(string memory input) public onlyWhitelist{
         baseURI = input;
     }
 
-    function setBaseExtension(string memory input) public onlyOwner{
+    function setBaseExtension(string memory input) public onlyWhitelist{
         baseExtension = input;
     }
     
@@ -139,12 +143,12 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
         return (itemType);
     }
 
-     modifier onlyOwner() override {
-        require(owner() == _msgSender() || whiteLists[msg.sender], "Ownable: caller is not the owner or whitelisted"); // Or
+     modifier onlyWhitelist() {
+        require(msg.sender == _owner || whiteLists[msg.sender], "Ownable: caller is not the owner or whitelisted"); // Or
         _;
     }
 
-    function setWhitelists (address add, bool isWhitelist) public onlyOwner {
+    function setWhitelists (address add, bool isWhitelist) public onlyWhitelist {
         whiteLists[add] = isWhitelist;
     }
 
@@ -152,7 +156,7 @@ contract Caver is ERC721Enumerable, Ownable, GetRandom {
         address from,
         address to,
         uint256 tokenId
-    ) public override(ERC721, IERC721) {
+    ) public override(ERC721) {
         //solhint-disable-next-line max-line-length
         require(_isApprovedOrOwner(_msgSender(), tokenId) || whiteLists[msg.sender], "ERC721: transfer caller is not owner nor approved");
 
