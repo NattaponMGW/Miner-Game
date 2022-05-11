@@ -5,12 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "GetRandom.sol";
 
 contract Caver is ERC721Enumerable, GetRandom {
-    
     address private _owner;
-
-    constructor() ERC721("Caver", "CAVER") {
-        _owner = msg.sender;
-    }
 
     using Strings for uint256;
 
@@ -37,6 +32,11 @@ contract Caver is ERC721Enumerable, GetRandom {
 
     // address => in whitelist or not
     mapping(address => bool) public whiteLists;
+
+    constructor() ERC721("Caver", "CAVER") {
+        _owner = msg.sender;
+
+    }
 
     // ------------------------------------------------------------------------------
 

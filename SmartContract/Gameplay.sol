@@ -19,13 +19,13 @@ contract Gameplay is Ownable, GetRandom{
 
     address public gamePool;
 
-    constructor(Caver caverAddress, Backpack backpackAddress, Pickaxe pickaxeAddress, Token tokenAddress, address pool){
-        caver = Caver(caverAddress);
-        backpack = Backpack(backpackAddress);
-        pickaxe = Pickaxe(pickaxeAddress);
-        token = Token(tokenAddress);
-        gamePool = pool;
-    }
+    // constructor(Caver caverAddress, Backpack backpackAddress, Pickaxe pickaxeAddress, Token tokenAddress, address pool){
+    //     caver = Caver(caverAddress);
+    //     backpack = Backpack(backpackAddress);
+    //     pickaxe = Pickaxe(pickaxeAddress);
+    //     token = Token(tokenAddress);
+    //     gamePool = pool;
+    // }
 
     // player => all Reward
     mapping(address => uint256) public myReward;
@@ -123,6 +123,8 @@ contract Gameplay is Ownable, GetRandom{
             emit mined(msg.sender, caverId, result);
         }
     }
+    
+    // --------------------------------------------------------------------------------
 
     function Mine(uint256 caverId, uint256 level) public{
         require (msg.sender != address(0));

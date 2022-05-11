@@ -7,10 +7,6 @@ import "GetRandom.sol";
 contract Pickaxe is ERC721Enumerable, GetRandom {
     address private _owner;
 
-    constructor() ERC721("Pickaxe", "PX") {
-        _owner = msg.sender;
-    }
-
     using Strings for uint256;
 
     string public baseURI = "https://raw.githubusercontent.com/NattaponMGW/Miner-Game/main/Images/p-";
@@ -30,6 +26,10 @@ contract Pickaxe is ERC721Enumerable, GetRandom {
     // address => in whitelist or not
     mapping(address => bool) public whiteLists;
 
+    constructor() ERC721("Pickaxe", "PX") {
+        _owner = msg.sender;
+    }
+    
     // ------------------------------------------------------------------------------
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {

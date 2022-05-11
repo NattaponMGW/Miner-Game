@@ -7,10 +7,6 @@ import "GetRandom.sol";
 contract Backpack is ERC721Enumerable, GetRandom {
     address private _owner;
 
-    constructor() ERC721("Backpack", "BP") {
-        _owner = msg.sender;
-    }
-
     using Strings for uint256;
 
     string public baseURI = "https://raw.githubusercontent.com/NattaponMGW/Miner-Game/main/Images/b-";
@@ -29,6 +25,10 @@ contract Backpack is ERC721Enumerable, GetRandom {
 
     // address => in whitelist or not
     mapping(address => bool) public whiteLists;
+
+    constructor() ERC721("Backpack", "BP") {
+        _owner = msg.sender;
+    }
 
     // ------------------------------------------------------------------------------
 
