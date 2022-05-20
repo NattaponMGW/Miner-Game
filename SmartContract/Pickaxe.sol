@@ -9,7 +9,7 @@ contract Pickaxe is ERC721Enumerable, GetRandom {
 
     using Strings for uint256;
 
-    string public baseURI = "https://raw.githubusercontent.com/NattaponMGW/Miner-Game/main/Images/p-";
+    string public baseUri = "https://raw.githubusercontent.com/NattaponMGW/Miner-Game/main/Images/p-";
     string public baseExtension = ".jpg";
 
     uint256 public nftId;
@@ -32,12 +32,12 @@ contract Pickaxe is ERC721Enumerable, GetRandom {
     
     // ------------------------------------------------------------------------------
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+    function tokenUri(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: Uri query for nonexistent token");
 
-        string memory _baseURI = baseURI;
-        return bytes(_baseURI).length > 0 
-            ? string(abi.encodePacked(_baseURI, nftLevel[tokenId].toString(), baseExtension))
+        string memory _baseUri = baseUri;
+        return bytes(_baseUri).length > 0 
+            ? string(abi.encodePacked(_baseUri, nftLevel[tokenId].toString(), baseExtension))
             : "";
     }
 
@@ -72,8 +72,8 @@ contract Pickaxe is ERC721Enumerable, GetRandom {
         nftStr[itemId] = str;
     }
 
-    function setbaseURI(string memory input) public onlyWhitelist{
-        baseURI = input;
+    function setbaseUri(string memory input) public onlyWhitelist{
+        baseUri = input;
     }
 
     function setBaseExtension(string memory input) public onlyWhitelist{

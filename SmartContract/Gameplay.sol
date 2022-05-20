@@ -8,24 +8,18 @@ import "./Token.sol";
 import "./GetRandom.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Gameplay is Ownable, GetRandom{
+contract Gameplay is Ownable{
 
     event mined(address player, uint256 caverId, uint256 reward);
 
-    Caver public caver; // = Caver(0x09943Fa8DD32C76f7b880627a0F6af73e8f5A595);
-    Backpack public backpack;   // = Backpack(0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8);
-    Pickaxe public pickaxe; // = Pickaxe(0x5A86858aA3b595FD6663c2296741eF4cd8BC4d01);
-    Token public token;
 
-    address public gamePool;
+    Caver public caver = Caver(0xbf2911094b147cEe54AA9E54C91F61E2A5E3A1CA);
+    Backpack public backpack = Backpack(0xAf995528d81dDB9E7eA72c85E41CF0d32FF82Aa5);
+    Pickaxe public pickaxe = Pickaxe(0x56a0c49923cF4FFd53621F71FE0801e5444b78ac);
+    Token public token = Token(0x5e6C055331122A6EA75b39cC0b5F4D6E36F9866f);
+    GetRandom public getRandom = GetRandom(0xED38F7494Aef3BC7f20C4a768A42D9A15C449433);
 
-    // constructor(Caver caverAddress, Backpack backpackAddress, Pickaxe pickaxeAddress, Token tokenAddress, address pool){
-    //     caver = Caver(caverAddress);
-    //     backpack = Backpack(backpackAddress);
-    //     pickaxe = Pickaxe(pickaxeAddress);
-    //     token = Token(tokenAddress);
-    //     gamePool = pool;
-    // }
+    address public gamePool = 0xb8DE0C06A0d55584e7DA4148F352Ed9fF4595367;
 
     // player => all Reward
     mapping(address => uint256) public myReward;
@@ -44,8 +38,8 @@ contract Gameplay is Ownable, GetRandom{
     uint256 public backpackPrice = 19;  // token = (price * 10 ** 18)
     uint256 public pickaxePrice = 19;   // token = (price * 10 ** 18)
 
-    uint256 public sharpenPrice = 1;
-    uint256 public foodPrice = 1; // divide by 1000
+    uint256 public sharpenPrice = 1;    // token = (price * 10 ** 18)
+    uint256 public foodPrice = 1;       // token = (price / 1000) * 10 ** 18
 
     // --------------------------------------------------------------------------------
     function ClaimReward() public {
@@ -106,7 +100,7 @@ contract Gameplay is Ownable, GetRandom{
         uint256 reward;
         reward = toToken( rewardPerLevel * level ) / 100;
         uint256 result;
-        uint256 successNumber = random(caverId);
+        uint256 successNumber = getRandom.random(caverId);
         if (successNumber >= 300) { // 70% Seccess Rate
             result = reward;
         }else {
@@ -122,6 +116,11 @@ contract Gameplay is Ownable, GetRandom{
         if (emitEvent){
             emit mined(msg.sender, caverId, result);
         }
+    }
+
+    function TestRandom(uint256 freeInt) public view onlyOwner returns(uint256) {
+        uint256 returnRandom = getRandom.random(freeInt);
+        return (returnRandom);
     }
     
     // --------------------------------------------------------------------------------
@@ -156,7 +155,7 @@ contract Gameplay is Ownable, GetRandom{
         uint256 reward;
         reward = toToken( rewardPerLevel * level ) / 100;
         uint256 result;
-        uint256 successNumber = random(caverId);
+        uint256 successNumber = getRandom.random(caverId);
         if (successNumber >= 300) { // 70% Seccess Rate
             result = reward;
         }else {
@@ -291,6 +290,9 @@ contract Gameplay is Ownable, GetRandom{
     }
     function setTokenContract(address newContract) public onlyOwner{
         token = Token(newContract);
+    }
+    function setGetRandom(address newContract) public onlyOwner{
+        getRandom = GetRandom(newContract);
     }
     function setGamePoolContract(address newContract) public onlyOwner{
         gamePool = newContract;
